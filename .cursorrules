@@ -1,0 +1,225 @@
+# Frontend Development Guidelines
+
+## Code Style & Conventions
+
+### JavaScript/React Style
+- Use functional components with hooks
+- Prefer `const` over `let`, avoid `var`
+- Use arrow functions for callbacks
+- Use template literals for string interpolation
+- Maximum line length: 100 characters
+
+### Component Structure
+```javascript
+'use client'; // If using client-side features
+
+import { useState, useEffect } from 'react';
+import ComponentName from '@/components/ComponentName';
+
+export default function PageName() {
+  // State declarations
+  const [data, setData] = useState(null);
+  
+  // Effects
+  useEffect(() => {
+    // Side effects
+  }, [dependencies]);
+  
+  // Event handlers
+  const handleAction = () => {
+    // Handler logic
+  };
+  
+  // Render
+  return (
+    <div>
+      {/* JSX */}
+    </div>
+  );
+}
+```
+
+### File Organization
+```
+app/
+  layout.js           # Root layout
+  page.js             # Home page
+  [feature]/
+    page.js           # Feature page
+components/
+  ComponentName.js    # Reusable components
+lib/
+  api.js              # API client
+  store.js            # State management
+```
+
+## Best Practices
+
+### State Management
+- Use `useState` for local component state
+- Use Zustand store (`lib/store.js`) for global state (auth, user)
+- Avoid prop drilling - use context or global store
+
+### API Calls
+- Always use the configured `api` instance from `lib/api.js`
+- Handle loading states
+- Handle errors gracefully
+- Show user feedback for actions
+
+```javascript
+const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const { data } = await api.get('/endpoint');
+      setData(data);
+    } catch (error) {
+      console.error('Failed to fetch', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchData();
+}, []);
+```
+
+### Optimistic Updates
+For better UX, update UI immediately then sync with server:
+
+```javascript
+const handleRate = async (id, score) => {
+  // Update UI immediately
+  const previousState = { ...state };
+  setState(newState);
+  
+  try {
+    await api.post('/rate', { id, score });
+    // Optionally refetch to get server state
+  } catch (error) {
+    // Revert on error
+    setState(previousState);
+  }
+};
+```
+
+### Styling with Tailwind
+- Use Tailwind utility classes
+- Follow mobile-first responsive design
+- Use consistent spacing scale (4, 6, 8, etc.)
+- Group related utilities together
+
+```javascript
+<div className="flex items-center justify-between p-4 bg-white shadow rounded-lg hover:shadow-xl transition-shadow">
+```
+
+## Authentication
+
+### Protected Routes
+```javascript
+import { useAuthStore } from '@/lib/store';
+import { useRouter } from 'next/navigation';
+
+const { user } = useAuthStore();
+const router = useRouter();
+
+if (!user) {
+  router.push('/login');
+  return;
+}
+```
+
+### API Authentication
+The `api` instance automatically includes JWT token in requests.
+Token is stored in localStorage and managed by Zustand store.
+
+## Common Patterns
+
+### Fetching Data
+```javascript
+const [data, setData] = useState(null);
+const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const { data } = await api.get('/endpoint');
+      setData(data);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchData();
+}, []);
+
+if (loading) return <div>Loading...</div>;
+```
+
+### Form Handling
+```javascript
+const [formData, setFormData] = useState({ field: '' });
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    await api.post('/endpoint', formData);
+    // Success handling
+  } catch (error) {
+    // Error handling
+  }
+};
+```
+
+## Component Guidelines
+
+### Reusable Components
+- Keep components focused and single-purpose
+- Accept props for customization
+- Use PropTypes or TypeScript for type safety
+- Export as default
+
+### Page Components
+- Use `'use client'` directive when needed
+- Handle loading and error states
+- Implement proper SEO metadata
+- Use Next.js routing conventions
+
+## Performance
+
+- Use `useCallback` for event handlers passed as props
+- Use `useMemo` for expensive computations
+- Lazy load heavy components
+- Optimize images with Next.js Image component
+
+## Testing
+
+Run development server:
+```bash
+yarn dev
+```
+
+Build for production:
+```bash
+yarn build
+```
+
+## Common Tasks
+
+### Add a new page
+1. Create `page.js` in appropriate `app/` directory
+2. Implement component with proper structure
+3. Add navigation link if needed
+4. Test responsive design
+
+### Add a new component
+1. Create file in `components/` directory
+2. Implement reusable component
+3. Export as default
+4. Import with `@/components/ComponentName`
+
+### Update global state
+1. Modify store in `lib/store.js`
+2. Add new state and actions
+3. Use in components with `useAuthStore()`
